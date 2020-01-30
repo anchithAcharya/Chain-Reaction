@@ -24,8 +24,8 @@ int ROW=10,COL=10;
 
 struct CELL
 {
-    int orbs,threshold,u1,v1;
-    char player,u2,v2;
+    int orbs,threshold;
+    char player;
     struct CELL *top,*bottom,*left,*right;
 };
 
@@ -40,6 +40,7 @@ struct SAVE_STATES
 	struct BACKUP_GRID **bg;
 	char current_player;
 	struct SAVE_STATES *prev,*next;
+	struct CELL *p_b;
 };
 
 typedef struct BACKUP_GRID B_G;
@@ -109,9 +110,6 @@ void setup_GRID(cell grid[ROW][COL])
             grid[i+1][k].orbs=0;
             grid[i+1][k].threshold=3;
             grid[i+1][k].player='0';									   //SET DEFAULT VALUES OF ORBS, THRESHOLD AND PLAYER FOR MIDDLE CELLS
-
-            grid[i+1][k].u1=0;
-            grid[i+1][k].u2='0';
         }
     }
 
@@ -132,7 +130,6 @@ void setup_GRID(cell grid[ROW][COL])
         grid[0][i].threshold=grid[ROW-1][j].threshold=2;			//SET HORIZONTAL EDGE CELLS' DEFAULT VALUES
 		grid[0][i].orbs=0;                                        //SET FIRST AND LAST ROW LINKS AND THRESHHOLD
 		grid[0][j].player='0';
-		grid[0][i].u1=0;grid[0][i].u2='0';
 	}
 
     for(i=j=0;i<ROW;i++,j++)
@@ -529,6 +526,7 @@ void save(cell grid[ROW][COL],char t)
 		}
 	
 		temp->current_player=t;
+		temp->p_b=p;
 	}
 
 	for(i=0;i<ROW;i++)
@@ -549,11 +547,11 @@ void save(cell grid[ROW][COL],char t)
 
 void undo(cell grid[ROW][COL],bool *a)
 {
-	int i,j;
+	int i,j; char temp;
 	if(!stateptr)
 	{
 		printf("Undo limit reached!\n");
-		Sleep(400);
+		Sleep(600);
 		return;
 	} 
 
@@ -566,9 +564,22 @@ void undo(cell grid[ROW][COL],bool *a)
         }
     }
 
+	i=stateptr->p_b->orbs;
+	temp=stateptr->p_b->player;
+	
+	stateptr->p_b->orbs=1;
+	stateptr->p_b->player='-';
+
 	system("cls");
     show_GRID(grid);
-    Sleep(800);
+    Sleep(400);
+
+	stateptr->p_b->orbs=i;
+	stateptr->p_b->player=temp;
+
+	system("cls");
+    show_GRID(grid);
+    Sleep(400);
 
 	if(stateptr->current_player=='a')					//TODO: remove this when implementing multiple players
 		*a=1;
