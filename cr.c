@@ -53,7 +53,7 @@ typedef struct CELL *cellptr;
 cellptr p=NULL;
 
 int SAVES=0;
-S_S *stateptr,*first,*Add_undo=NULL;
+S_S *stateptr,*first,*last,*Add_undo=NULL;
 
 void setup_GRID(cell[ROW][COL]);
 void show_GRID(cell[ROW][COL]);
@@ -62,7 +62,7 @@ bool get_INPUT(cell[ROW][COL],bool*);
 char detect_SPLKEY(char);
 void add_ORB(cell[ROW][COL],cellptr,char);
 void save(cell[ROW][COL],char);
-void undo(cell[ROW][COL],bool*);
+void undo(cell[ROW][COL],bool*,bool);
 char check_WINNER(cell[ROW][COL]);
 void resize_GRID();
 void rules();
@@ -168,9 +168,9 @@ void show_GRID(cell grid[ROW][COL])
 void play()
 {
 	int i;
-	bool a=1;
+	bool a=1,z=1;
 	cell grid[ROW][COL]; cellptr ptr=NULL;
-	stateptr=first=NULL;
+	stateptr=first=last=NULL;
 
 	setup_GRID(grid);
 
@@ -188,12 +188,24 @@ void play()
 				
 		ptr=p;
 
+		if(z)
+		{
+			save(grid,'a');
+			z=!z;
+		}
+
 		if(a)
 		{
 			if(ptr->player!='b')
 			{
-				save(grid,'a');
+				while(last!=stateptr)
+				{
+					last=last->prev;
+					free(last->next);
+				}
+				
 				add_ORB(grid,ptr,'a');
+				save(grid,'b');				
 			}
 
 			else
@@ -209,8 +221,14 @@ void play()
 		{
 			if(ptr->player!='a')
 			{
-				save(grid,'b');
+				while(last!=stateptr)
+				{
+					last=last->prev;
+					free(last->next);
+				}
+				
 				add_ORB(grid,ptr,'b');
+				save(grid,'a');				
 			}
 
 			else
@@ -248,7 +266,7 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 		else
 			printf("<player b>:");
 
-		printf("\n\n(WASD to move, ENTER to select cell. Z to undo.)\n");
+		printf("\n\n(WASD to move, ENTER to select cell. z to undo, r to redo.)\n");
 		dir=getch();
         dir=detect_SPLKEY(dir);
 
@@ -318,7 +336,14 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 			case 'z':p->orbs=temp1;
 					 p->player=temp2;
 					 
-					 undo(grid,a);
+					 undo(grid,a,1);
+
+					 return 1;
+
+			case 'r':p->orbs=temp1;
+					 p->player=temp2;
+					 					 
+					 undo(grid,a,0);
 					 
 					 return 1;
 
@@ -354,6 +379,7 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 					 grid[4][5].player=grid[5][5].player=grid[6][5].player=grid[5][6].player='b';
 
 					 p=&grid[5][4];
+					 *a=1;
 
 					 system("cls");
 					 show_GRID(grid);
@@ -506,25 +532,24 @@ void save(cell grid[ROW][COL],char t)
 
 		if(!stateptr) 
 		{
-			stateptr=first=temp;
-			temp->prev=temp->next=temp;
+			stateptr=first=last=temp;
+			temp->prev=temp->next=NULL;
 		}
 
 		else
 		{
 			stateptr->next=temp;
 			temp->prev=stateptr;
-			temp->next=first;
-			first->prev=temp;
-			stateptr=temp;
+			temp->next=NULL;
+			stateptr=last=temp;
 
-			if(SAVES>5)
+			/* if(SAVES>5)
 			{
 				SAVES--;
 				first=first->next;
 				free(first->prev);
-				first->prev=temp;
-			}
+				first->prev=NULL;
+			} */
 		}
 	
 		temp->current_player=t;
@@ -547,27 +572,45 @@ void save(cell grid[ROW][COL],char t)
     }
 }
 
-void undo(cell grid[ROW][COL],bool *a)
+void undo(cell grid[ROW][COL],bool *a,bool toggle)
 {
-	int i,j; char temp;
-	if(!stateptr)
+	int i,j; char temp_player; S_S *temp;
+
+	if(toggle)
 	{
-		printf("Undo limit reached!\n");
-		Sleep(600);
-		return;
-	} 
+		if(!stateptr || !stateptr->prev)
+		{
+			printf("Undo limit reached!\n");
+			Sleep(600);
+			return;
+		}
+		temp=stateptr->prev;
+	}
+
+	else
+	{
+		if(!stateptr || !stateptr->next )
+		{
+			printf("Redo limit reached!\n");
+			Sleep(600);
+			return;
+		}
+
+		temp=stateptr->next;
+	}
+	
 
 	for(i=0;i<ROW;i++)
     {
         for(j=0;j<COL;j++)
         {
-				grid[i][j].orbs=stateptr->bg[i][j].orbs_b;
-				grid[i][j].player=stateptr->bg[i][j].player_b;
+				grid[i][j].orbs=temp->bg[i][j].orbs_b;
+				grid[i][j].player=temp->bg[i][j].player_b;
         }
     }
 
-	i=stateptr->p_b->orbs;
-	temp=stateptr->p_b->player;
+	/* i=stateptr->p_b->orbs;
+	temp_player=stateptr->p_b->player;
 	
 	stateptr->p_b->orbs=1;
 	stateptr->p_b->player='-';
@@ -577,32 +620,18 @@ void undo(cell grid[ROW][COL],bool *a)
     Sleep(400);
 
 	stateptr->p_b->orbs=i;
-	stateptr->p_b->player=temp;
+	stateptr->p_b->player=temp_player; */
 
 	system("cls");
     show_GRID(grid);
     Sleep(400);
 
-	if(stateptr->current_player=='a')					//TODO: remove this when implementing multiple players
+	if(temp->current_player=='a')					//TODO: remove this when implementing multiple players
 		*a=1;
 	else
 		*a=0;
 		
-	if(first==stateptr)
-	{
-		free(stateptr);
-		first=stateptr=NULL;
-	}	
-
-	else
-	{
-		stateptr=stateptr->prev;
-		free(stateptr->next);
-		stateptr->next=first;
-		first->prev=stateptr;
-	}
-
-	SAVES--;
+	stateptr=temp;
 }
 
 char check_WINNER(cell grid[ROW][COL])
