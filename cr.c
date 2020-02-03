@@ -609,18 +609,38 @@ void undo(cell grid[ROW][COL],bool *a,bool toggle)
         }
     }
 
-	/* i=stateptr->p_b->orbs;
-	temp_player=stateptr->p_b->player;
+	if(toggle)
+	{
+		i=stateptr->p_b->orbs;
+		temp_player=stateptr->p_b->player;
+		
+		stateptr->p_b->orbs=1;
+		stateptr->p_b->player='-';
+
+		system("cls");
+		show_GRID(grid);
+		Sleep(400);
+
+		stateptr->p_b->orbs=i;
+		stateptr->p_b->player=temp_player;
+	}
+
+	else
+	{
+		i=temp->p_b->orbs;
+		temp_player=temp->p_b->player;
+		
+		temp->p_b->orbs=1;
+		temp->p_b->player='+';
+
+		system("cls");
+		show_GRID(grid);
+		Sleep(300);
+
+		temp->p_b->orbs=i;
+		temp->p_b->player=temp_player;
+	}
 	
-	stateptr->p_b->orbs=1;
-	stateptr->p_b->player='-';
-
-	system("cls");
-    show_GRID(grid);
-    Sleep(400);
-
-	stateptr->p_b->orbs=i;
-	stateptr->p_b->player=temp_player; */
 
 	system("cls");
     show_GRID(grid);
