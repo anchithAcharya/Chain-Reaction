@@ -13,6 +13,8 @@
 #define PAUSE Sleep(500);
 #define PAUSE2 getch();
 
+#define MAX_SAVES 5
+
 #define CREATE_SS(ptr,m,n)\
 {\
 	ptr=malloc(sizeof(S_S));\
@@ -52,8 +54,8 @@ typedef struct CELL *cellptr;
 
 cellptr p=NULL;
 
-int SAVES=0;
-S_S *stateptr,*first,*last,*Add_undo=NULL;
+int SAVES;
+S_S *stateptr,*first,*last,*Add_undo;
 
 void setup_GRID(cell[ROW][COL]);
 void show_GRID(cell[ROW][COL]);
@@ -169,8 +171,9 @@ void play()
 {
 	int i;
 	bool a=1,z=1;
-	cell grid[ROW][COL]; cellptr ptr=NULL;
-	stateptr=first=last=NULL;
+	cell grid[ROW][COL];
+	cellptr ptr=NULL; SAVES=0;
+	stateptr=first=last=Add_undo=NULL;
 
 	setup_GRID(grid);
 
@@ -181,7 +184,19 @@ void play()
 		
 		if(get_INPUT(grid,&a))
 		{
-			if(p->player=='&') return;
+			if(p->player=='&')
+			{
+				free(Add_undo);
+
+				while(first!=last)
+				{
+					first=first->next;
+					free(first->prev);
+				}
+				
+				return;
+
+			}
 
 			continue;
 		}
@@ -244,6 +259,12 @@ void play()
 	}
 
 	free(Add_undo);
+
+	while(first!=last)
+	{
+		first=first->next;
+		free(first->prev);
+	}
 }
 
 bool get_INPUT(cell grid[ROW][COL],bool *a)
@@ -543,13 +564,13 @@ void save(cell grid[ROW][COL],char t)
 			temp->next=NULL;
 			stateptr=last=temp;
 
-			/* if(SAVES>5)
+			if(SAVES>MAX_SAVES+1)
 			{
 				SAVES--;
 				first=first->next;
 				free(first->prev);
 				first->prev=NULL;
-			} */
+			}
 		}
 	
 		temp->current_player=t;
@@ -623,6 +644,8 @@ void undo(cell grid[ROW][COL],bool *a,bool toggle)
 
 		stateptr->p_b->orbs=i;
 		stateptr->p_b->player=temp_player;
+
+		SAVES--;
 	}
 
 	else
@@ -639,6 +662,8 @@ void undo(cell grid[ROW][COL],bool *a,bool toggle)
 
 		temp->p_b->orbs=i;
 		temp->p_b->player=temp_player;
+
+		SAVES++;
 	}
 	
 
