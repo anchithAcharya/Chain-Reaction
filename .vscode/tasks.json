@@ -21,5 +21,23 @@
 			],
 			"group": "build"
 		},
+
+		{
+			"type": "shell",
+			"label": "release",
+			"command": "C:\\TDM-GCC-64\\bin\\gcc.exe",
+			"args": [
+				"${file}",
+				"-o",
+				"${fileDirname}\\${fileBasenameNoExtension}.exe"
+			],
+			"options": {
+				"cwd": "C:\\TDM-GCC-64\\bin"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build"
+		}
 	]
 }
