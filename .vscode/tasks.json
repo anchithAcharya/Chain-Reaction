@@ -29,7 +29,7 @@
 			"args": [
 				"${file}",
 				"-o",
-				"${fileDirname}\\${fileBasenameNoExtension}.exe"
+				"${fileDirname}\\release\\${fileBasenameNoExtension}.exe"
 			],
 			"options": {
 				"cwd": "C:\\TDM-GCC-64\\bin"

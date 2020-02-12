@@ -8,6 +8,10 @@
 
 #define RED "\x1b[31m"
 #define BLUE "\x1b[34m"
+#define GREEN "\x1b[32m"
+#define YELLOW "\x1b[33m"
+#define MAGENTA "\x1b[35m"
+#define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
 
 #define PAUSE Sleep(500);
@@ -18,9 +22,18 @@
 #define CREATE_SS(ptr,m,n)\
 {\
 	ptr=malloc(sizeof(S_S));\
+	if(!ptr)\
+	{printf("Memory allocation for save state failed.\n");\
+		exit(1);}\
 	ptr->bg=malloc(m*sizeof(B_G *));\
+	if(!ptr->bg)\
+	{printf("Memory allocation for backup grid ROWS failed.\n");\
+		exit(1);}\
 	for(i=0;i<m;i++)\
-		ptr->bg[i]=malloc(n*sizeof(B_G));\
+	{ptr->bg[i]=malloc(n*sizeof(B_G));\
+	if(!ptr->bg[i])\
+	{printf("Memory allocation for backup grid COLUMNS failed.\n");\
+		exit(1);}}\
 	ptr->prev=ptr->next=NULL;\
 }
 
@@ -42,10 +55,16 @@ struct BACKUP_GRID
 struct SAVE_STATES
 {
 	struct BACKUP_GRID **bg;
-	char current_player;
+	int current_player;
 	struct SAVE_STATES *prev,*next;
 	struct CELL *p_b;
 };
+
+struct PLAYERS
+{
+	bool exists;
+	char name, colour;
+}player[6];
 
 typedef struct BACKUP_GRID B_G;
 typedef struct SAVE_STATES S_S;
@@ -54,18 +73,21 @@ typedef struct CELL *cellptr;
 
 cellptr p=NULL;
 
-int SAVES;
+int ip,SAVES;
 S_S *stateptr,*first,*last,*Add_undo;
 
 void setup_GRID(cell[ROW][COL]);
+void setup_PLAYERS();
+char colour(char);
 void show_GRID(cell[ROW][COL]);
 void play();
-bool get_INPUT(cell[ROW][COL],bool*);
+bool get_INPUT(cell[ROW][COL],int);
 char detect_SPLKEY(char);
 void add_ORB(cell[ROW][COL],cellptr,char);
-void save(cell[ROW][COL],char);
-void undo(cell[ROW][COL],bool*,bool);
-char check_WINNER(cell[ROW][COL]);
+void save(cell[ROW][COL],int);
+void undo(cell[ROW][COL],bool);
+bool check_WINNER(cell[ROW][COL]);
+char eliminate(cell[ROW][COL]);
 void resize_GRID();
 void rules();
 
@@ -145,7 +167,41 @@ void setup_GRID(cell grid[ROW][COL])
     }
 
     grid[0][0].threshold=grid[0][COL-1].threshold=grid[ROW-1][0].threshold=grid[ROW-1][COL-1].threshold=1;      //SET CORNER CELLS' THRESHOLD VALUE
+}
+
+void setup_PLAYERS()
+{
+	int i;
+	
+	player[0].exists=player[5].exists=player[1].exists=1;
+	player[0].name='a'; player[5].name='c'; player[1].name='b';
+
+	for(i=2;i<5;i++)
+	{
+		player[i].exists=0;
+		player[i].name='\0';
 	}
+
+	player[0].colour='r';
+	player[1].colour='b';
+	player[2].colour='g';
+	player[3].colour='y';
+	player[4].colour='m';
+	player[5].colour='c';
+}
+
+char colour(char name)
+{
+	int i;
+
+	for(i=0;i<6;i++)
+	{
+		if(name==player[i].name)
+			return player[i].colour;
+	}
+
+	return '\0';
+}
 
 void show_GRID(cell grid[ROW][COL])
 {
@@ -155,12 +211,28 @@ void show_GRID(cell grid[ROW][COL])
     {
         for(j=0;j<COL;j++)
         {
-            if(grid[i][j].player=='a')
-				printf(RED"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-			else if(grid[i][j].player=='b')
-				printf(BLUE"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-			else
-				printf("%c%d ",grid[i][j].player,grid[i][j].orbs);
+            switch(colour(grid[i][j].player))
+			{
+				case 'r': printf(RED"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				case 'b': printf(BLUE"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				case 'g': printf(GREEN"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				case 'y': printf(YELLOW"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				case 'm': printf(MAGENTA"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				case 'c': printf(CYAN"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
+						  break;
+				
+				default : printf("%c%d ",grid[i][j].player,grid[i][j].orbs);
+			}
         }
 
         printf("\n");
@@ -169,20 +241,31 @@ void show_GRID(cell grid[ROW][COL])
 
 void play()
 {
-	int i;
-	bool a=1,z=1;
+	ip=-1; bool z=1;
 	cell grid[ROW][COL];
 	cellptr ptr=NULL; SAVES=0;
 	stateptr=first=last=Add_undo=NULL;
 
 	setup_GRID(grid);
+	setup_PLAYERS();	
 
-	while(!check_WINNER(grid))
+	do
 	{
 		system("cls");
 		show_GRID(grid);
+
+		if(z)
+		{
+			do
+			{
+				ip=(ip+1)%6;
+			}while(!player[ip].exists);
+			
+			z=!z;
+			save(grid,ip);
+		}
 		
-		if(get_INPUT(grid,&a))
+		if(get_INPUT(grid,ip))
 		{
 			if(p->player=='&')
 			{
@@ -197,66 +280,30 @@ void play()
 				return;
 
 			}
-
+			
 			continue;
 		}
 				
 		ptr=p;
 
-		if(z)
+		if(ptr->player==player[ip].name || ptr->player=='0')
 		{
-			save(grid,'a');
-			z=!z;
-		}
-
-		if(a)
-		{
-			if(ptr->player!='b')
+			while(last!=stateptr)
 			{
-				while(last!=stateptr)
-				{
-					last=last->prev;
-					free(last->next);
-				}
-				
-				add_ORB(grid,ptr,'a');
-				save(grid,'b');				
+				last=last->prev;
+				free(last->next);
 			}
-
-			else
-			{
-				printf(RED"Cell already occupied by player b. Try a different cell.\n"RESET);
-				Sleep(1000);
-				continue;
-			}
-
+			
+			add_ORB(grid,ptr,player[ip].name);
+			z=1;	
 		}
-
+		
 		else
 		{
-			if(ptr->player!='a')
-			{
-				while(last!=stateptr)
-				{
-					last=last->prev;
-					free(last->next);
-				}
-				
-				add_ORB(grid,ptr,'b');
-				save(grid,'a');				
-			}
-
-			else
-			{
-				printf(RED"Cell already occupied by player a. Try a different cell.\n"RESET);
-				Sleep(1000);
-				continue;
-			}
-
+			printf(RED"Cell already occupied by player %c. Try a different cell.\n"RESET,player[ip].name);
+			Sleep(1000);
 		}
-
-		a=!a;
-	}
+	}while(!check_WINNER(grid));
 
 	free(Add_undo);
 
@@ -267,7 +314,7 @@ void play()
 	}
 }
 
-bool get_INPUT(cell grid[ROW][COL],bool *a)
+bool get_INPUT(cell grid[ROW][COL],int ip)
 {
     int temp1; char dir='0',temp2;
 
@@ -282,10 +329,7 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 		system("cls");
 		show_GRID(grid);
 
-		if(*a)
-			printf("<player a>:");
-		else
-			printf("<player b>:");
+		printf("<player %c>:",player[ip].name);
 
 		printf("\n\n(WASD to move, ENTER to select cell. z to undo, r to redo.)\n");
 		dir=getch();
@@ -357,14 +401,14 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 			case 'z':p->orbs=temp1;
 					 p->player=temp2;
 					 
-					 undo(grid,a,1);
+					 undo(grid,1);
 
 					 return 1;
 
 			case 'r':p->orbs=temp1;
 					 p->player=temp2;
 					 					 
-					 undo(grid,a,0);
+					 undo(grid,0);
 					 
 					 return 1;
 
@@ -400,7 +444,7 @@ bool get_INPUT(cell grid[ROW][COL],bool *a)
 					 grid[4][5].player=grid[5][5].player=grid[6][5].player=grid[5][6].player='b';
 
 					 p=&grid[5][4];
-					 *a=1;
+					 ip=0;
 
 					 system("cls");
 					 show_GRID(grid);
@@ -457,7 +501,7 @@ void add_ORB(cell grid[ROW][COL],cellptr ptr,char player)
 	if(ptr->orbs>ptr->threshold)
 	{
 		unstable=1;
-		save(grid,'v');
+		save(grid,-1);
 	}
 
 	saveptr=Add_undo;
@@ -526,7 +570,7 @@ void add_ORB(cell grid[ROW][COL],cellptr ptr,char player)
 
 		}
 
-		save(grid,'v');
+		save(grid,-1);
 
 		system("cls");
 		show_GRID(grid);
@@ -535,12 +579,12 @@ void add_ORB(cell grid[ROW][COL],cellptr ptr,char player)
 	}
 }
 
-void save(cell grid[ROW][COL],char t)
+void save(cell grid[ROW][COL],int ip)
 {
 	int i,j;
 	S_S *temp;
 	
-	if(t=='v')
+	if(ip==-1)
 	{
 		if(!Add_undo) CREATE_SS(Add_undo,ROW,COL);
 		temp=Add_undo;
@@ -573,7 +617,7 @@ void save(cell grid[ROW][COL],char t)
 			}
 		}
 	
-		temp->current_player=t;
+		temp->current_player=ip;
 		temp->p_b=p;
 	}
 
@@ -583,7 +627,7 @@ void save(cell grid[ROW][COL],char t)
         {
 			temp->bg[i][j].orbs_b=grid[i][j].orbs;
 			
-			if(t=='v')
+			if(ip==-1)
 			{
 				if(temp->bg[i][j].player_b!='#') temp->bg[i][j].player_b='0';
 			}
@@ -593,7 +637,7 @@ void save(cell grid[ROW][COL],char t)
     }
 }
 
-void undo(cell grid[ROW][COL],bool *a,bool toggle)
+void undo(cell grid[ROW][COL],bool toggle)
 {
 	int i,j; char temp_player; S_S *temp;
 
@@ -671,53 +715,73 @@ void undo(cell grid[ROW][COL],bool *a,bool toggle)
     show_GRID(grid);
     Sleep(400);
 
-	if(temp->current_player=='a')					//TODO: remove this when implementing multiple players
-		*a=1;
-	else
-		*a=0;
+	ip=temp->current_player;
 		
 	stateptr=temp;
 }
 
-char check_WINNER(cell grid[ROW][COL])
+bool check_WINNER(cell grid[ROW][COL])
 {
-	int i,j; char temp='\0'; bool same=0;
+	char winner='\0';
 
-	for(i=0;i<ROW;i++)
-    {
-        for(j=0;j<COL;j++)
-        {
-        	if(!temp)
-			{
-				if(grid[i][j].player!='0')
-					temp=grid[i][j].player;
-			}
+	winner=eliminate(grid);
 
-			else
-			{
-				if(grid[i][j].player!=temp)
-				{
-					if(grid[i][j].player!='0')
-						return '\0';
-				}
-
-				else
-					same=1;
-			}
-        }
-    }
-
-    if(temp)
+    if(winner)
 	{
-		if(same)
-		{
-			printf("Player %c wins!\n",temp);
-			return temp;
-		}
-
+		printf("Player %c wins!\n",winner);
+		return 1;
 	}
 
-	return '\0';
+	return 0;
+}
+
+char eliminate(cell grid[ROW][COL])
+{
+	cellptr ptr[6]={NULL};
+	bool alive[6]={0},same=0;
+	int ip,i=0; char winner='\0';
+
+	for(ip=0;ip<6;ip++)
+	{
+		if(player[ip].exists)
+		{
+			ptr[ip]=grid;
+
+			while(ptr[ip]<=&grid[ROW-1][COL-1])
+			{
+				if(ptr[ip]->player==player[ip].name)
+				{
+					if(alive[ip]==1)
+					{
+						same=1;
+						break;
+					}
+					
+					alive[ip]=1;
+				}
+
+				ptr[ip]++;
+			}
+		}
+	}
+
+	if(same)
+	{
+		for(ip=0;ip<6;ip++)
+		{
+			if(!alive[ip])
+				player[ip].exists=0;
+
+			else 
+			{
+				i++;
+				if(!winner) winner=player[ip].name;
+			}
+		}
+	}
+
+	if(i==1) return winner;
+	else return '\0';
 }
 
 void resize_GRID()
