@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <conio.h>
+#include <ctype.h>
 #include <windows.h>
 #include <stdbool.h>
 
@@ -81,6 +82,7 @@ void setup_PLAYERS();
 char colour(char);
 void show_GRID(cell[ROW][COL]);
 void play();
+void settings();
 bool get_INPUT(cell[ROW][COL],int);
 char detect_SPLKEY(char);
 void add_ORB(cell[ROW][COL],cellptr,char);
@@ -89,16 +91,18 @@ void undo(cell[ROW][COL],bool);
 bool check_WINNER(cell[ROW][COL]);
 char eliminate(cell[ROW][COL]);
 void resize_GRID();
+void change_PLAYERS(bool);
 void rules();
 
 int main()
 {
     int choice=0;
-
+	
+	setup_PLAYERS();
 
 	while(1)
 	{
-		printf("\n1.Play    2.Change grid size    3.Rules    4.Exit\n");
+		printf("\n1.Play    2.Settings    3.Rules    4.Exit\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
 
@@ -107,7 +111,7 @@ int main()
 			case 1 :play();
 					break;
 
-			case 2 :resize_GRID();
+			case 2 :settings();
 					break;
 
 			case 3 :rules();
@@ -115,10 +119,39 @@ int main()
 
 			case 4 :exit(0);
 
-			default:printf("Invalid choice. Please try again\n");
+			default:printf(RED"Invalid choice. Please try again\n"RESET);
 		}
 	}
     return 0;
+}
+
+void settings()
+{
+	int choice=0;
+
+
+	while(1)
+	{
+		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Return to main menu\n");
+		printf("Enter your choice:");
+		scanf("%d",&choice);
+
+		switch(choice)
+		{
+			case 1 :resize_GRID();
+					break;
+
+			case 2 :change_PLAYERS(1);
+					break;
+
+			case 3 :change_PLAYERS(0);
+					break;
+
+			case 4 :return;
+
+			default:printf(RED"Invalid choice. Please try again\n"RESET);
+		}
+	}
 }
 
 void setup_GRID(cell grid[ROW][COL])
@@ -173,10 +206,10 @@ void setup_PLAYERS()
 {
 	int i;
 	
-	player[0].exists=player[5].exists=player[1].exists=1;
-	player[0].name='a'; player[5].name='c'; player[1].name='b';
+	player[0].exists=player[1].exists=1;
+	player[0].name='a'; player[1].name='b';
 
-	for(i=2;i<5;i++)
+	for(i=2;i<6;i++)
 	{
 		player[i].exists=0;
 		player[i].name='\0';
@@ -246,8 +279,7 @@ void play()
 	cellptr ptr=NULL; SAVES=0;
 	stateptr=first=last=Add_undo=NULL;
 
-	setup_GRID(grid);
-	setup_PLAYERS();	
+	setup_GRID(grid);	
 
 	do
 	{
@@ -645,7 +677,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 	{
 		if(!stateptr || !stateptr->prev)
 		{
-			printf("Undo limit reached!\n");
+			printf(RED"Undo limit reached!\n"RESET);
 			Sleep(600);
 			return;
 		}
@@ -656,7 +688,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 	{
 		if(!stateptr || !stateptr->next )
 		{
-			printf("Redo limit reached!\n");
+			printf(RED"Redo limit reached!\n"RESET);
 			Sleep(600);
 			return;
 		}
@@ -798,7 +830,7 @@ void resize_GRID()
 			if(n>=5 && n<=20)
 			{
 				ROW=m; COL=n;
-				printf("Size changed successfully!\n");
+				printf(GREEN"Size changed successfully!\n"RESET);
 
 				return;
 			}
@@ -806,6 +838,231 @@ void resize_GRID()
 
 		printf(RED"Both values must be between 5 and 20. Please try again.\n"RESET);
 	}
+}
+
+void change_PLAYERS(bool toggle)
+{
+	bool flag=0;
+	int ip,count=0;
+	char name,colour;
+	
+	system("cls");
+	
+	printf("\nCurrent players:");
+	for(ip=0;ip<6;ip++)
+	{
+		if(player[ip].exists)
+		{
+			count++;
+			switch(player[ip].colour)
+			{
+				case 'r': printf(RED" %c"RESET,player[ip].name);
+						  break;
+				
+				case 'b': printf(BLUE" %c"RESET,player[ip].name);
+						  break;
+				
+				case 'g': printf(GREEN" %c"RESET,player[ip].name);
+						  break;
+				
+				case 'y': printf(YELLOW" %c"RESET,player[ip].name);
+						  break;
+				
+				case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
+						  break;
+				
+				case 'c': printf(CYAN" %c"RESET,player[ip].name);
+						  break;	
+			}
+		}
+	}
+	
+	if(toggle)
+	{
+		while(count<6)
+		{
+			while(1)
+			{
+				printf("\n\nEnter a single character name for the player (Press Esc key to exit):");
+				name=getch();
+			
+				printf("%c",name);
+
+				if(name==27)
+				{
+					printf("1");
+					return;
+				}
+				
+				for(ip=0;ip<6;ip++)
+				{
+					if(player[ip].name==name)
+						printf(RED"\nName already taken by another user. Please try another name.\n"RESET);
+				}
+
+				if(!isalpha(name))
+					printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
+				
+				else break;
+			}
+			
+			while(1)
+			{
+				printf("\n\nEnter the colour ['r':red, 'b':blue, 'g':green, 'y':yellow, 'm':magenta, 'c':cyan] (Press Esc key to exit):");
+				colour=getch();
+			
+				printf("%c",colour);
+
+				if(name==27)
+				{
+					printf("1");
+					return;
+				}
+
+				for(ip=0;ip<6;ip++)
+				{
+					if(player[ip].colour==colour)
+					{
+						if(!player[ip].exists)
+						{
+							player[ip].exists=1;
+							player[ip].name=name;
+							
+							printf(GREEN"\nPlayer added!\n"RESET);
+
+							printf("\nCurrent players:");	
+							for(ip=0;ip<6;ip++)
+							{
+								if(player[ip].exists)
+								{
+									switch(player[ip].colour)
+									{
+										case 'r': printf(RED" %c"RESET,player[ip].name);
+												break;
+										
+										case 'b': printf(BLUE" %c"RESET,player[ip].name);
+												break;
+										
+										case 'g': printf(GREEN" %c"RESET,player[ip].name);
+												break;
+										
+										case 'y': printf(YELLOW" %c"RESET,player[ip].name);
+												break;
+										
+										case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
+												break;
+										
+										case 'c': printf(CYAN" %c"RESET,player[ip].name);
+												break;	
+									}
+								}
+							}
+							
+							flag=1;
+							count++;
+							break;
+						}
+
+						else
+						{
+							flag=1;
+							printf(RED"\nPlayer with that colour already exists. Please try another colour.\n"RESET);
+						}
+
+						break;					
+					}
+				}
+					
+				if(flag)
+				{
+					flag=0;
+					break;
+				}
+
+				printf(RED"\nInvalid colour code. Please enter a single character according to the colour code shown below:\n"RESET);
+			}
+		}
+
+		printf(RED"\nMaximum number of players reached!\n"RESET);
+	}
+
+	else
+	{
+		while(count>2)
+		{
+			printf("\n\nEnter the character name of the player to be removed (Press Esc key to exit):");
+			name=getch();
+
+			if(name==27)
+			{
+				printf("1");
+				return;
+			}
+			
+			printf("%c",name);
+
+			if(!isalpha(name))
+				printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
+			
+			for(ip=0;ip<6;ip++)
+			{
+				if(player[ip].name==name)
+				{
+					player[ip].name='\0';
+					player[ip].exists=0;
+
+					printf(GREEN"\nPlayer removed!\n"RESET);
+
+					printf("\nCurrent players:");	
+					for(ip=0;ip<6;ip++)
+					{
+						if(player[ip].exists)
+						{
+							switch(player[ip].colour)
+							{
+								case 'r': printf(RED" %c"RESET,player[ip].name);
+										break;
+								
+								case 'b': printf(BLUE" %c"RESET,player[ip].name);
+										break;
+								
+								case 'g': printf(GREEN" %c"RESET,player[ip].name);
+										break;
+								
+								case 'y': printf(YELLOW" %c"RESET,player[ip].name);
+										break;
+								
+								case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
+										break;
+								
+								case 'c': printf(CYAN" %c"RESET,player[ip].name);
+										break;	
+							}
+						}
+					}
+
+					flag=1;
+					count--;
+					break;
+				}
+			}
+
+			if(flag)
+			{
+				flag=0;
+				continue;
+			}
+
+			printf(RED"\nPlease enter a valid name of an existing player.\n"RESET);
+		}
+
+		printf(RED"\nMinimum number of players reached!\n"RESET);
+	}
+	
+	printf("\nPress any key to return to main menu.");
+	name=getch();
+
+	system("cls");
 }
 
 void rules()
