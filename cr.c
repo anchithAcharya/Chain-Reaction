@@ -15,10 +15,12 @@
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
 
-#define PAUSE Sleep(500);
-#define PAUSE2 getch();
-
-#define MAX_SAVES 5
+#define DISPLAY(x)\
+{\
+	system("cls");\
+	show_GRID(grid);\
+	Sleep(x);\
+}
 
 #define CREATE_SS(ptr,m,n)\
 {\
@@ -74,7 +76,8 @@ typedef struct CELL *cellptr;
 
 cellptr p=NULL;
 
-int ip,SAVES;
+int ip,SAVES,MAX_SAVES=5;
+bool SHOW_EXPLOSION=1;
 S_S *stateptr,*first,*last,*Add_undo;
 
 void setup_GRID(cell[ROW][COL]);
@@ -132,7 +135,7 @@ void settings()
 
 	while(1)
 	{
-		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Return to main menu\n");
+		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Change undo limit    5.Toggle cell split animation    6.Return to main menu\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
 
@@ -147,7 +150,21 @@ void settings()
 			case 3 :change_PLAYERS(0);
 					break;
 
-			case 4 :return;
+			case 4 :printf("\n\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
+					scanf("%d",&MAX_SAVES);
+
+					break;
+			
+			case 5 :SHOW_EXPLOSION=!SHOW_EXPLOSION;
+					
+					if(SHOW_EXPLOSION)
+						printf("Cell split animation ON.\n");
+					else
+						printf("Cell split animation OFF.\n");
+					
+					break;
+
+			case 6 :return;
 
 			default:printf(RED"Invalid choice. Please try again\n"RESET);
 		}
@@ -283,8 +300,7 @@ void play()
 
 	do
 	{
-		system("cls");
-		show_GRID(grid);
+		DISPLAY(0);
 
 		if(z)
 		{
@@ -358,12 +374,11 @@ bool get_INPUT(cell grid[ROW][COL],int ip)
 		p->orbs=1;
 		p->player='+';
 
-		system("cls");
-		show_GRID(grid);
+		DISPLAY(0);
 
 		printf("<player %c>:",player[ip].name);
 
-		printf("\n\n(WASD to move, ENTER to select cell. z to undo, r to redo.)\n");
+		printf("\n\nWASD/arrow keys to move, ENTER to select cell. \nz to undo, r to redo. 'Esc' to exit to main menu.\n");
 		dir=getch();
         dir=detect_SPLKEY(dir);
 
@@ -478,9 +493,7 @@ bool get_INPUT(cell grid[ROW][COL],int ip)
 					 p=&grid[5][4];
 					 ip=0;
 
-					 system("cls");
-					 show_GRID(grid);
-					 PAUSE
+					 DISPLAY(500);
 
 					 break;
 
@@ -526,9 +539,7 @@ void add_ORB(cell grid[ROW][COL],cellptr ptr,char player)
 	ptr->orbs++;
 	ptr->player=player;
 
-	system("cls");
-	show_GRID(grid);
-	PAUSE
+	DISPLAY(500);
 
 	if(ptr->orbs>ptr->threshold)
 	{
@@ -604,11 +615,12 @@ void add_ORB(cell grid[ROW][COL],cellptr ptr,char player)
 
 		save(grid,-1);
 
-		system("cls");
-		show_GRID(grid);
-		PAUSE
+		if(SHOW_EXPLOSION)
+			DISPLAY(500);
 
 	}
+
+	DISPLAY(0);
 }
 
 void save(cell grid[ROW][COL],int ip)
@@ -640,7 +652,7 @@ void save(cell grid[ROW][COL],int ip)
 			temp->next=NULL;
 			stateptr=last=temp;
 
-			if(SAVES>MAX_SAVES+1)
+			if(SAVES>MAX_SAVES+1 && MAX_SAVES>=0)
 			{
 				SAVES--;
 				first=first->next;
@@ -677,7 +689,11 @@ void undo(cell grid[ROW][COL],bool toggle)
 	{
 		if(!stateptr || !stateptr->prev)
 		{
-			printf(RED"Undo limit reached!\n"RESET);
+			if(MAX_SAVES==0)
+				printf(RED"Undos disabled!\n"RESET);
+
+			else
+				printf(RED"Undo limit reached!\n"RESET);
 			Sleep(600);
 			return;
 		}
@@ -688,7 +704,11 @@ void undo(cell grid[ROW][COL],bool toggle)
 	{
 		if(!stateptr || !stateptr->next )
 		{
-			printf(RED"Redo limit reached!\n"RESET);
+			if(MAX_SAVES==0)
+				printf(RED"Redos disabled!\n"RESET);
+
+			else
+				printf(RED"Redo limit reached!\n"RESET);
 			Sleep(600);
 			return;
 		}
@@ -714,9 +734,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 		stateptr->p_b->orbs=1;
 		stateptr->p_b->player='-';
 
-		system("cls");
-		show_GRID(grid);
-		Sleep(400);
+		DISPLAY(400);
 
 		stateptr->p_b->orbs=i;
 		stateptr->p_b->player=temp_player;
@@ -732,9 +750,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 		temp->p_b->orbs=1;
 		temp->p_b->player='+';
 
-		system("cls");
-		show_GRID(grid);
-		Sleep(300);
+		DISPLAY(300);
 
 		temp->p_b->orbs=i;
 		temp->p_b->player=temp_player;
@@ -743,9 +759,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 	}
 	
 
-	system("cls");
-    show_GRID(grid);
-    Sleep(400);
+	DISPLAY(400);
 
 	ip=temp->current_player;
 		
@@ -1068,22 +1082,21 @@ void change_PLAYERS(bool toggle)
 void rules()
 {
 	system("cls");
-	printf("\nChain Reaction is turn-based game for two people. It consists mainly of a two-dimensional grid and many 'spheres' or 'orbs'.\n\n");
+	printf("\nChain Reaction is turn-based game for 2-6 people. It consists of a two-dimensional grid and many 'spheres' or 'orbs'.\n\n");
 	printf("Each cell in the grid is represented as a combination of two items:\n");
 	printf("->The player whose orbs are in that cell ('0' if cell is unoccupied)\n->The number of orbs in that cell (again, defaults to 0)\n");
 	printf("The line below the grid specifies whose turn is it to play the game.\n\n");
 	printf("In each player's turn, the respective player is given one orb to place in one of the cells of the grid. ");
 	printf("The orb can only be placed in a cell where there are no orbs belonging to the opponent.\n");
-	printf("As such, the grid switches to 'selection mode', where the player can move through the grid by the means of a pointer represented as '+1'.\n");
-	printf("The player can press 'w', 'a', 's', and 'd' to move up, left, down and right respectively through the cells. To select a cell, press 'Enter'.\n");
-	printf("\nWhen a particular cell is selected, an orb is added to that cell. ");
+	printf("Move the cursor using arrow keys or \"wasd\". To select a cell, press 'Enter'.\n");
+	printf("\nWhen a particular cell is selected, one orb is added to that cell. ");
 	printf("If the cell orb count exceeds that of the threshold value for that cell, then that cell becomes unstable and explodes.\n");
 	printf("Threshold value for:-\n->Corner cells: 1\n->Edge cells: 2\n->Other cells: 3\n\n");
 	printf("When a cell explodes, its orbs split and travel in as much of the four directions as possible. ");
 	printf("One orb travels to each surrounding cell that exists, any excess orbs stay in the cell.\n");
 	printf("Thus, orb count of the neighboring cells increase, and along with that, the player they belong to also switches to the player who caused the explosion.\n");
 	printf("If the neighboring cells become unstable after the explosion, they explode too, resulting in a chain reaction.\n\n");
-	printf("The game ends when the a player is completely eliminated from the grid, and the other player is declared as winner.");
+	printf("The game ends when the all but one player is completely eliminated from the grid, and the remaining player is declared as winner.");
 	getch();
 
 	system("cls");
