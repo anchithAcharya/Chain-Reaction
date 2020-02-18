@@ -99,12 +99,13 @@ void rules();
 
 int main()
 {
-    int choice=0;
+    int choice;
 	
 	setup_PLAYERS();
 
 	while(1)
 	{
+		choice=0;
 		printf("\n1.Play    2.Settings    3.Rules    4.Exit\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
@@ -122,7 +123,8 @@ int main()
 
 			case 4 :exit(0);
 
-			default:printf(RED"Invalid choice. Please try again\n"RESET);
+			default:printf(RED"\nInvalid choice. Please try again\n"RESET);
+					while(getchar()!='\n');
 		}
 	}
     return 0;
@@ -130,11 +132,12 @@ int main()
 
 void settings()
 {
-	int choice=0;
+	int choice;
 
 
 	while(1)
 	{
+		choice=0;
 		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Change undo limit    5.Toggle cell split animation    6.Return to main menu\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
@@ -167,6 +170,7 @@ void settings()
 			case 6 :return;
 
 			default:printf(RED"Invalid choice. Please try again\n"RESET);
+					while(getchar()!='\n');
 		}
 	}
 }
@@ -922,12 +926,15 @@ void change_PLAYERS(bool toggle)
 			
 			while(1)
 			{
-				printf("\n\nEnter the colour ['r':red, 'b':blue, 'g':green, 'y':yellow, 'm':magenta, 'c':cyan] (Press Esc key to exit):");
+				printf("\n\nEnter the colour ");
+				printf("['r':"RED"red"RESET", 'b':"BLUE"blue"RESET", ");
+				printf("'g':"GREEN"green"RESET", 'y':"YELLOW"yellow"RESET", ");
+				printf("'m':"MAGENTA"magenta"RESET", 'c':"CYAN"cyan"RESET"] (Press Esc key to exit):");
 				colour=getch();
 			
 				printf("%c",colour);
 
-				if(name==27)
+				if(colour==27)
 				{
 					printf("1");
 					return;
