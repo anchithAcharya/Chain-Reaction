@@ -14,11 +14,17 @@
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
 
+#ifdef _WIN32
+	#define CLR_SCR system("cls");
+#else
+	#define CLR_SCR system("clear");
+#endif
+
 #define SLEEP(x) usleep(x*1000);
 
 #define DISPLAY(x)\
 {\
-	system("cls");\
+	CLR_SCR\
 	show_GRID(grid);\
 	SLEEP(x);\
 }
@@ -102,11 +108,11 @@ int main()
 {
     int choice;
 	
-	setup_PLAYERS();
-
 	while(1)
 	{
 		choice=0;
+		setup_PLAYERS();
+
 		printf("\n1.Play    2.Settings    3.Rules    4.Exit\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
