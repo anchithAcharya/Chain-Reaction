@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <conio.h>
 #include <ctype.h>
-#include <windows.h>
 #include <stdbool.h>
 
 #define RED "\x1b[31m"
@@ -15,11 +14,19 @@
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
 
+#ifdef _WIN32
+	#define CLR_SCR system("cls");
+#else
+	#define CLR_SCR system("clear");
+#endif
+
+#define SLEEP(x) usleep(x*1000);
+
 #define DISPLAY(x)\
 {\
-	system("cls");\
+	CLR_SCR\
 	show_GRID(grid);\
-	Sleep(x);\
+	SLEEP(x);\
 }
 
 #define CREATE_SS(ptr,m,n)\
@@ -101,11 +108,11 @@ int main()
 {
     int choice;
 	
-	setup_PLAYERS();
-
 	while(1)
 	{
 		choice=0;
+		setup_PLAYERS();
+
 		printf("\n1.Play    2.Settings    3.Rules    4.Exit\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
@@ -353,7 +360,7 @@ void play()
 		else
 		{
 			printf(RED"Cell already occupied by player %c. Try a different cell.\n"RESET,player[ip].name);
-			Sleep(1000);
+			SLEEP(1000);
 		}
 	}while(!check_WINNER(grid));
 
@@ -502,7 +509,7 @@ bool get_INPUT(cell grid[ROW][COL],int ip)
 					 break;
 
             default :printf(RED"Invalid choice. Try again.\n"RESET);
-					 Sleep(1000);
+					 SLEEP(1000);
 
 					 p->orbs=temp1;
 					 p->player=temp2;
@@ -698,7 +705,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 
 			else
 				printf(RED"Undo limit reached!\n"RESET);
-			Sleep(600);
+			SLEEP(600);
 			return;
 		}
 		temp=stateptr->prev;
@@ -713,7 +720,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 
 			else
 				printf(RED"Redo limit reached!\n"RESET);
-			Sleep(600);
+			SLEEP(600);
 			return;
 		}
 
