@@ -6,13 +6,6 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#ifdef _WIN32
-	#include <windows.h>
-	#define SLEEP(x) Sleep(x);
-#else
-	#define SLEEP(x) usleep(x*1000);
-#endif
-
 #define RED "\x1b[31m"
 #define BLUE "\x1b[34m"
 #define GREEN "\x1b[32m"
@@ -20,6 +13,8 @@
 #define MAGENTA "\x1b[35m"
 #define CYAN "\x1b[36m"
 #define RESET "\x1b[0m"
+
+#define SLEEP(x) usleep(x*1000);
 
 #define DISPLAY(x)\
 {\
