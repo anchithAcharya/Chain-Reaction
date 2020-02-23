@@ -4,8 +4,13 @@
 #include <stdio.h>
 #include <conio.h>
 #include <ctype.h>
-#include <windows.h>
 #include <stdbool.h>
+
+#ifdef _WIN32
+	#include <windows.h>
+	#define SLEEP(x) Sleep(x);
+#else #define SLEEP(x) usleep(x);
+#endif
 
 #define RED "\x1b[31m"
 #define BLUE "\x1b[34m"
@@ -19,7 +24,7 @@
 {\
 	system("cls");\
 	show_GRID(grid);\
-	Sleep(x);\
+	SLEEP(x);\
 }
 
 #define CREATE_SS(ptr,m,n)\
@@ -353,7 +358,7 @@ void play()
 		else
 		{
 			printf(RED"Cell already occupied by player %c. Try a different cell.\n"RESET,player[ip].name);
-			Sleep(1000);
+			SLEEP(1000);
 		}
 	}while(!check_WINNER(grid));
 
@@ -502,7 +507,7 @@ bool get_INPUT(cell grid[ROW][COL],int ip)
 					 break;
 
             default :printf(RED"Invalid choice. Try again.\n"RESET);
-					 Sleep(1000);
+					 SLEEP(1000);
 
 					 p->orbs=temp1;
 					 p->player=temp2;
@@ -698,7 +703,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 
 			else
 				printf(RED"Undo limit reached!\n"RESET);
-			Sleep(600);
+			SLEEP(600);
 			return;
 		}
 		temp=stateptr->prev;
@@ -713,7 +718,7 @@ void undo(cell grid[ROW][COL],bool toggle)
 
 			else
 				printf(RED"Redo limit reached!\n"RESET);
-			Sleep(600);
+			SLEEP(600);
 			return;
 		}
 
