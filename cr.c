@@ -93,7 +93,7 @@ char colour(char);
 void show_GRID(cell[ROW][COL]);
 void play();
 void settings();
-bool get_INPUT(cell[ROW][COL],int);
+bool get_INPUT(cell[ROW][COL]);
 char detect_SPLKEY(char);
 void add_ORB(cell[ROW][COL],cellptr,char);
 void save(cell[ROW][COL],int);
@@ -307,7 +307,8 @@ void play()
 	cellptr ptr=NULL; SAVES=0;
 	stateptr=first=last=Add_undo=NULL;
 
-	setup_GRID(grid);	
+	setup_GRID(grid);
+	CLR_SCR
 
 	do
 	{
@@ -324,7 +325,7 @@ void play()
 			save(grid,ip);
 		}
 		
-		if(get_INPUT(grid,ip))
+		if(get_INPUT(grid))
 		{
 			if(p->player=='&')
 			{
@@ -373,7 +374,7 @@ void play()
 	}
 }
 
-bool get_INPUT(cell grid[ROW][COL],int ip)
+bool get_INPUT(cell grid[ROW][COL])
 {
     int temp1; char dir='0',temp2;
 
