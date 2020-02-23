@@ -9,7 +9,8 @@
 #ifdef _WIN32
 	#include <windows.h>
 	#define SLEEP(x) Sleep(x);
-#else #define SLEEP(x) usleep(x);
+#else
+	#define SLEEP(x) usleep(x*1000);
 #endif
 
 #define RED "\x1b[31m"
