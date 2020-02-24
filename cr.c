@@ -29,6 +29,25 @@
 	SLEEP(x);\
 }
 
+#define PRINT_COLOUR(x,y,z)\
+{switch(colour(y))\
+	{\
+		case 'r': printf(RED x RESET,y,z);\
+					break;\		
+		case 'b': printf(BLUE x RESET,y,z);\
+					break;\		
+		case 'g': printf(GREEN x RESET,y,z);\
+					break;\		
+		case 'y': printf(YELLOW x RESET,y,z);\
+					break;\		
+		case 'm': printf(MAGENTA x RESET,y,z);\
+					break;\		
+		case 'c': printf(CYAN x RESET,y,z);\
+					break;\		
+		default : printf(x,y,z);\
+	}\
+}
+
 #define CREATE_SS(ptr,m,n)\
 {\
 	ptr=malloc(sizeof(S_S));\
@@ -45,7 +64,7 @@
 	{printf("Memory allocation for backup grid COLUMNS failed.\n");\
 		exit(1);}}\
 	ptr->prev=ptr->next=NULL;\
-}
+}\
 
 int ROW=10,COL=10;
 
@@ -101,12 +120,14 @@ void undo(cell[ROW][COL],bool);
 bool check_WINNER(cell[ROW][COL]);
 char eliminate(cell[ROW][COL]);
 void resize_GRID();
+int cur_PLAYERS();
 void change_PLAYERS(bool);
 void rules();
 
 int main()
 {
     int choice;
+	CLR_SCR
 	
 	while(1)
 	{
@@ -271,30 +292,7 @@ void show_GRID(cell grid[ROW][COL])
     for(i=0;i<ROW;i++)
     {
         for(j=0;j<COL;j++)
-        {
-            switch(colour(grid[i][j].player))
-			{
-				case 'r': printf(RED"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				case 'b': printf(BLUE"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				case 'g': printf(GREEN"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				case 'y': printf(YELLOW"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				case 'm': printf(MAGENTA"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				case 'c': printf(CYAN"%c%d "RESET,grid[i][j].player,grid[i][j].orbs);
-						  break;
-				
-				default : printf("%c%d ",grid[i][j].player,grid[i][j].orbs);
-			}
-        }
+        	PRINT_COLOUR("%c%d ",grid[i][j].player,grid[i][j].orbs);
 
         printf("\n");
     }
@@ -866,43 +864,30 @@ void resize_GRID()
 	}
 }
 
+int cur_PLAYERS()
+{
+	int i,count=0;;
+	printf("\nCurrent players: ");
+	for(i=0;i<6;i++)
+	{
+		if(player[i].exists)
+		{
+			count++;
+			PRINT_COLOUR("%c%c ",player[i].name,' ');
+		}
+	}
+
+	return count;
+}
+
 void change_PLAYERS(bool toggle)
 {
-	bool flag=0;
 	int ip,count=0;
 	char name,colour;
 	
-	system("cls");
-	
-	printf("\nCurrent players:");
-	for(ip=0;ip<6;ip++)
-	{
-		if(player[ip].exists)
-		{
-			count++;
-			switch(player[ip].colour)
-			{
-				case 'r': printf(RED" %c"RESET,player[ip].name);
-						  break;
-				
-				case 'b': printf(BLUE" %c"RESET,player[ip].name);
-						  break;
-				
-				case 'g': printf(GREEN" %c"RESET,player[ip].name);
-						  break;
-				
-				case 'y': printf(YELLOW" %c"RESET,player[ip].name);
-						  break;
-				
-				case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
-						  break;
-				
-				case 'c': printf(CYAN" %c"RESET,player[ip].name);
-						  break;	
-			}
-		}
-	}
-	
+	CLR_SCR
+	count=cur_PLAYERS();
+
 	if(toggle)
 	{
 		while(count<6)
@@ -919,25 +904,53 @@ void change_PLAYERS(bool toggle)
 					printf("1");
 					return;
 				}
-				
-				for(ip=0;ip<6;ip++)
-				{
-					if(player[ip].name==name)
-						printf(RED"\nName already taken by another user. Please try another name.\n"RESET);
-				}
 
-				if(!isalpha(name))
-					printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
+				if(isalpha(name))
+				{
+					for(ip=0;ip<6;ip++)
+					{
+						if(player[ip].name==name)
+						{
+							printf(RED"\nName already taken by another user. Please try another name.\n"RESET);
+							ip=-1;
+							break;
+						}
+					}
+
+					if (ip!=-1) break;
+				}
 				
-				else break;
+				else printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
 			}
 			
 			while(1)
 			{
-				printf("\n\nEnter the colour ");
-				printf("['r':"RED"red"RESET", 'b':"BLUE"blue"RESET", ");
-				printf("'g':"GREEN"green"RESET", 'y':"YELLOW"yellow"RESET", ");
-				printf("'m':"MAGENTA"magenta"RESET", 'c':"CYAN"cyan"RESET"] (Press Esc key to exit):");
+				printf("\n\nEnter the colour {");
+				for(ip=0;ip<6;ip++)
+				{
+					if(!player[ip].exists)
+					{
+						printf("'%c':",player[ip].colour);
+						
+						switch (player[ip].colour)
+						{
+							case 'r': printf(RED "red" RESET ", ");
+										break;
+							case 'b': printf(BLUE "blue" RESET ", ");
+										break;	
+							case 'g': printf(GREEN "green" RESET ", ");
+										break;
+							case 'y': printf(YELLOW "yellow" RESET ", ");
+										break;	
+							case 'm': printf(MAGENTA "magenta" RESET ", ");
+										break;	
+							case 'c': printf(CYAN "cyan" RESET ", ");
+										break;
+						}
+					}
+				}
+				
+				printf("] (Press Esc key to exit):");
 				colour=getch();
 			
 				printf("%c",colour);
@@ -958,55 +971,24 @@ void change_PLAYERS(bool toggle)
 							player[ip].name=name;
 							
 							printf(GREEN"\nPlayer added!\n"RESET);
-
-							printf("\nCurrent players:");	
-							for(ip=0;ip<6;ip++)
-							{
-								if(player[ip].exists)
-								{
-									switch(player[ip].colour)
-									{
-										case 'r': printf(RED" %c"RESET,player[ip].name);
-												break;
-										
-										case 'b': printf(BLUE" %c"RESET,player[ip].name);
-												break;
-										
-										case 'g': printf(GREEN" %c"RESET,player[ip].name);
-												break;
-										
-										case 'y': printf(YELLOW" %c"RESET,player[ip].name);
-												break;
-										
-										case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
-												break;
-										
-										case 'c': printf(CYAN" %c"RESET,player[ip].name);
-												break;	
-									}
-								}
-							}
+							cur_PLAYERS();
 							
-							flag=1;
+							ip=-1;
 							count++;
-							break;
 						}
 
 						else
 						{
-							flag=1;
 							printf(RED"\nPlayer with that colour already exists. Please try another colour.\n"RESET);
+							ip=-2;
 						}
 
-						break;					
+						break;			
 					}
 				}
 					
-				if(flag)
-				{
-					flag=0;
-					break;
-				}
+				if(ip==-1)	break;
+				else if(ip==-2) continue;
 
 				printf(RED"\nInvalid colour code. Please enter a single character according to the colour code shown below:\n"RESET);
 			}
@@ -1029,58 +1011,38 @@ void change_PLAYERS(bool toggle)
 			}
 			
 			printf("%c",name);
-
-			if(!isalpha(name))
-				printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
 			
 			for(ip=0;ip<6;ip++)
 			{
 				if(player[ip].name==name)
 				{
-					player[ip].name='\0';
-					player[ip].exists=0;
+					printf("\nPress 'Y' to confirm:");
+					while(getchar()!='\n');
+					scanf("%c",&colour);
 
-					printf(GREEN"\nPlayer removed!\n"RESET);
+					if(colour=='Y' || colour =='y')
+					{					
+						player[ip].name='\0';
+						player[ip].exists=0;
 
-					printf("\nCurrent players:");	
-					for(ip=0;ip<6;ip++)
-					{
-						if(player[ip].exists)
-						{
-							switch(player[ip].colour)
-							{
-								case 'r': printf(RED" %c"RESET,player[ip].name);
-										break;
-								
-								case 'b': printf(BLUE" %c"RESET,player[ip].name);
-										break;
-								
-								case 'g': printf(GREEN" %c"RESET,player[ip].name);
-										break;
-								
-								case 'y': printf(YELLOW" %c"RESET,player[ip].name);
-										break;
-								
-								case 'm': printf(MAGENTA" %c"RESET,player[ip].name);
-										break;
-								
-								case 'c': printf(CYAN" %c"RESET,player[ip].name);
-										break;	
-							}
-						}
+						printf(GREEN"\nPlayer removed!\n"RESET);
+						cur_PLAYERS();
+
+						count--;
 					}
 
-					flag=1;
-					count--;
+					ip=-1;
 					break;
 				}
 			}
 
-			if(flag)
+			if(!isalpha(name))
 			{
-				flag=0;
+				printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
 				continue;
 			}
+
+			if(ip==-1) continue;
 
 			printf(RED"\nPlease enter a valid name of an existing player.\n"RESET);
 		}
@@ -1091,12 +1053,12 @@ void change_PLAYERS(bool toggle)
 	printf("\nPress any key to return to main menu.");
 	name=getch();
 
-	system("cls");
+	CLR_SCR
 }
 
 void rules()
 {
-	system("cls");
+	CLR_SCR
 	printf("\nChain Reaction is turn-based game for 2-6 people. It consists of a two-dimensional grid and many 'spheres' or 'orbs'.\n\n");
 	printf("Each cell in the grid is represented as a combination of two items:\n");
 	printf("->The player whose orbs are in that cell ('0' if cell is unoccupied)\n->The number of orbs in that cell (again, defaults to 0)\n");
@@ -1114,7 +1076,7 @@ void rules()
 	printf("The game ends when the all but one player is completely eliminated from the grid, and the remaining player is declared as winner.");
 	getch();
 
-	system("cls");
+	CLR_SCR
 
 	return;
 }
