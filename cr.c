@@ -91,7 +91,7 @@ struct SAVE_STATES
 
 struct PLAYERS
 {
-	bool exists;
+	bool exists,alive;
 	char name, colour;
 }player[6];
 
@@ -121,18 +121,18 @@ bool check_WINNER(cell[ROW][COL]);
 char eliminate(cell[ROW][COL]);
 void resize_GRID();
 int cur_PLAYERS();
-void change_PLAYERS(bool);
+void change_PLAYERS(char);
 void rules();
 
 int main()
 {
     int choice;
 	CLR_SCR
-	
+
+	setup_PLAYERS();
 	while(1)
 	{
-		choice=0;
-		setup_PLAYERS();
+		choice=0;		
 
 		printf("\n1.Play    2.Settings    3.Rules    4.Exit\n");
 		printf("Enter your choice:");
@@ -166,7 +166,7 @@ void settings()
 	while(1)
 	{
 		choice=0;
-		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Change undo limit    5.Toggle cell split animation    6.Return to main menu\n");
+		printf("\n\n1.Change grid size    2.Add a player    3.Remove a player    4.Modify player properties    5.Change undo limit    6.Toggle cell split animation    7.Return to main menu\n");
 		printf("Enter your choice:");
 		scanf("%d",&choice);
 
@@ -175,18 +175,21 @@ void settings()
 			case 1 :resize_GRID();
 					break;
 
-			case 2 :change_PLAYERS(1);
+			case 2 :change_PLAYERS('a');
 					break;
 
-			case 3 :change_PLAYERS(0);
+			case 3 :change_PLAYERS('r');
 					break;
 
-			case 4 :printf("\n\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
+			case 4 :change_PLAYERS('m');
+					break;
+
+			case 5 :printf("\n\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
 					scanf("%d",&MAX_SAVES);
 
 					break;
 			
-			case 5 :SHOW_EXPLOSION=!SHOW_EXPLOSION;
+			case 6 :SHOW_EXPLOSION=!SHOW_EXPLOSION;
 					
 					if(SHOW_EXPLOSION)
 						printf("Cell split animation ON.\n");
@@ -195,7 +198,7 @@ void settings()
 					
 					break;
 
-			case 6 :return;
+			case 7 :return;
 
 			default:printf(RED"Invalid choice. Please try again\n"RESET);
 					while(getchar()!='\n');
@@ -255,12 +258,12 @@ void setup_PLAYERS()
 {
 	int i;
 	
-	player[0].exists=player[1].exists=1;
+	player[0].exists=player[0].alive=player[1].exists=player[1].alive=1;
 	player[0].name='a'; player[1].name='b';
 
 	for(i=2;i<6;i++)
 	{
-		player[i].exists=0;
+		player[i].exists=player[i].alive=0;
 		player[i].name='\0';
 	}
 
@@ -300,10 +303,20 @@ void show_GRID(cell grid[ROW][COL])
 
 void play()
 {
-	ip=-1; bool z=1;
+	bool z=1;
 	cell grid[ROW][COL];
 	cellptr ptr=NULL; SAVES=0;
 	stateptr=first=last=Add_undo=NULL;
+
+	for(ip=0;ip<6;ip++)
+	{
+		if(player[ip].exists)
+			player[ip].alive=1;		
+
+		else	player[ip].alive=0;
+	}
+
+	ip=-1;
 
 	setup_GRID(grid);
 	CLR_SCR
@@ -317,7 +330,7 @@ void play()
 			do
 			{
 				ip=(ip+1)%6;
-			}while(!player[ip].exists);
+			}while(!player[ip].alive);
 			
 			z=!z;
 			save(grid,ip);
@@ -799,7 +812,7 @@ char eliminate(cell grid[ROW][COL])
 
 	for(ip=0;ip<6;ip++)
 	{
-		if(player[ip].exists)
+		if(player[ip].alive)
 		{
 			ptr[ip]=grid;
 
@@ -826,7 +839,7 @@ char eliminate(cell grid[ROW][COL])
 		for(ip=0;ip<6;ip++)
 		{
 			if(!alive[ip])
-				player[ip].exists=0;
+				player[ip].alive=0;
 
 			else 
 			{
@@ -880,7 +893,7 @@ int cur_PLAYERS()
 	return count;
 }
 
-void change_PLAYERS(bool toggle)
+void change_PLAYERS(char mode)
 {
 	int ip,count=0;
 	char name,colour;
@@ -888,7 +901,7 @@ void change_PLAYERS(bool toggle)
 	CLR_SCR
 	count=cur_PLAYERS();
 
-	if(toggle)
+	if(mode=='a')
 	{
 		while(count<6)
 		{
@@ -967,7 +980,7 @@ void change_PLAYERS(bool toggle)
 					{
 						if(!player[ip].exists)
 						{
-							player[ip].exists=1;
+							player[ip].exists=player[ip].alive=1;
 							player[ip].name=name;
 							
 							printf(GREEN"\nPlayer added!\n"RESET);
@@ -997,12 +1010,13 @@ void change_PLAYERS(bool toggle)
 		printf(RED"\nMaximum number of players reached!\n"RESET);
 	}
 
-	else
+	else if(mode=='r')
 	{
 		while(count>2)
 		{
 			printf("\n\nEnter the character name of the player to be removed (Press Esc key to exit):");
 			name=getch();
+			while(getchar()!='\n');
 
 			if(name==27)
 			{
@@ -1017,13 +1031,12 @@ void change_PLAYERS(bool toggle)
 				if(player[ip].name==name)
 				{
 					printf("\nPress 'Y' to confirm:");
-					while(getchar()!='\n');
 					scanf("%c",&colour);
 
 					if(colour=='Y' || colour =='y')
 					{					
 						player[ip].name='\0';
-						player[ip].exists=0;
+						player[ip].exists=player[ip].alive=0;
 
 						printf(GREEN"\nPlayer removed!\n"RESET);
 						cur_PLAYERS();
@@ -1049,6 +1062,154 @@ void change_PLAYERS(bool toggle)
 
 		printf(RED"\nMinimum number of players reached!\n"RESET);
 	}
+
+	else if(mode=='m')
+	{
+		while(1)
+		{
+			int i;
+			printf("\n\nEnter the name of the player to be modified (Press Esc key to exit):");
+			name=getch();
+
+			if(name==27)
+				return;
+			
+			printf("%c",name);
+			
+			for(i=0;i<6;i++)
+			{
+				if(player[i].name==name)
+				{					
+					while(1)
+					{
+						printf("\n\nEnter the new name (Press Esc key to go back):");
+						name=getch();
+					
+						printf("%c",name);
+
+						if(name==27)
+						{
+							printf("E");
+							ip=-1;
+							break;
+						}
+
+						if(isalpha(name))
+						{
+							for(ip=0;ip<6;ip++)
+							{
+								if(player[ip].name==name && ip!=i)
+								{
+									printf(RED"\nExisting name. Please try another name.\n"RESET);
+									ip=-1;
+									break;
+								}
+							}
+
+							if (ip!=-1) break;
+						}
+						
+						else printf(RED"\nInvalid name! Please enter an uppercase or lowercase alphabet only.\n"RESET);
+					}
+
+					if(ip==-1)
+					{
+						i=-1;
+						break;
+					}
+					
+					while(1)
+					{
+						player[i].exists=0;
+						
+						printf("\n\nEnter the new colour {");
+						for(ip=0;ip<6;ip++)
+						{
+							if(!player[ip].exists)
+							{
+								printf("'%c':",player[ip].colour);
+								
+								switch (player[ip].colour)
+								{
+									case 'r': printf(RED "red" RESET ", ");
+												break;
+									case 'b': printf(BLUE "blue" RESET ", ");
+												break;	
+									case 'g': printf(GREEN "green" RESET ", ");
+												break;
+									case 'y': printf(YELLOW "yellow" RESET ", ");
+												break;	
+									case 'm': printf(MAGENTA "magenta" RESET ", ");
+												break;	
+									case 'c': printf(CYAN "cyan" RESET ", ");
+												break;
+								}
+							}
+						}
+						
+						player[i].exists=1;
+
+						printf("] (Press Esc key to go back):");
+						colour=getch();
+					
+						printf("%c",colour);
+
+						if(colour==27)
+						{
+							printf("E");
+							ip=-1;
+							break;
+						}
+
+						for(ip=0;ip<6;ip++)
+						{
+							if(player[ip].colour==colour)
+							{
+								if(!player[ip].exists || ip==i)
+								{
+									player[i].exists=player[i].alive=0;
+									player[i].name='\0';
+
+									player[ip].exists=player[ip].alive=1;
+									player[ip].name=name;
+									
+									printf(GREEN"\nPlayer modified!\n"RESET);
+									cur_PLAYERS();
+									
+									ip=-1;
+								}
+
+								else
+								{
+									printf(RED"\nPlayer with that colour already exists. Please try another colour.\n"RESET);
+									ip=-2;
+								}
+
+								break;			
+							}
+						}
+							
+						if(ip==-1)	break;
+						else if(ip==-2) continue;
+
+						printf(RED"\nInvalid colour code. Please enter a single character according to the colour code shown below:\n"RESET);
+					}
+
+					if(ip==-1)
+					{
+						i=-1;
+						break;
+					}		
+				}
+			}
+			
+			if(i==-1) continue;
+
+			printf(RED"\nPlease enter a valid name of an existing player.\n"RESET);
+		}	
+	}
+
+	else printf("\nError");
 	
 	printf("\nPress any key to return to main menu.");
 	name=getch();
