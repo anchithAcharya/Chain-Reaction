@@ -160,42 +160,64 @@ int main()
 
 void settings()
 {
-	int choice;
+	int n;
+	char choice='\0',ch;
 
 
 	while(1)
 	{
-		choice=0;
-		printf("\n\n1.Change grid size    2.Change players    3.Change undo limit    4.Toggle cell split animation    5.Return to main menu\n");
+		printf("\n\n1.Change grid size    2.Change players    3.Change undo limit    4.Toggle cell split animation    Esc:Back to main menu\n");
 		printf("Enter your choice:");
-		scanf("%d",&choice);
+		
+		while((choice=getche())!='\r' && choice!=27)
+			ch=choice;
 
-		switch(choice)
+		if(choice==27)
 		{
-			case 1 :resize_GRID();
-					break;
+			printf("EEsc\n");
+			return;
+		}
 
-			case 2 :change_PLAYERS();
-					break;
+		switch(ch)
+		{
+			case '1':resize_GRID();
+					 break;
+
+			case '2':change_PLAYERS();
+					 break;
 			
-			case 3 :printf("\n\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
-					scanf("%d",&MAX_SAVES);
+			case '3':printf("\n\nCurrent limit: %d",MAX_SAVES);
+					 
+					 while(1)
+					 {
+						 printf("\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
+						 scanf("%d",&n);
 
-					break;
+						 if(n==0) printf(RED"\nUndo/Redo disabled.\n"RESET);
+						 else if(n<0) printf(BLUE"\nUnlimited undos!"RESET);
+						 else if(n>0) printf(GREEN "Undo limit set to %d." RESET,n);
+						 else
+						 {
+							 printf(RED"Invalid input!\n"RESET);
+							 continue;
+						 }
+
+						 MAX_SAVES=n;
+						 break;
+					 }
+
+					 break;
 			
-			case 4 :SHOW_EXPLOSION=!SHOW_EXPLOSION;
+			case '4':SHOW_EXPLOSION^=1;
 					
-					if(SHOW_EXPLOSION)
-						printf("Cell split animation ON.\n");
-					else
-						printf("Cell split animation OFF.\n");
+					 if(SHOW_EXPLOSION)
+					 	printf("Cell split animation " GREEN "ON" RESET".\n");
+					 else
+					 	printf("Cell split animation " RED "OFF" RESET".\n");
 					
-					break;
+					 break;
 
-			case 5 :return;
-
-			default:printf(RED"Invalid choice. Please try again\n"RESET);
-					while(getchar()!='\n');
+			default :printf(RED"Invalid choice. Please try again\n"RESET);
 		}
 	}
 }
@@ -853,7 +875,7 @@ void resize_GRID()
 
 	while(1)
 	{
-		printf("\nEnter the row and column size:");
+		printf("\n\nEnter the row and column size:");
 		scanf("%d%d",&m,&n);
 
 		if(m>=5 && m<=20)
