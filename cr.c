@@ -190,20 +190,24 @@ void settings()
 					 
 					 while(1)
 					 {
-						 printf("\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
-						 scanf("%d",&n);
+						printf("\nEnter the limit (0: disable, -ve number: unlimited. Default=5):");
+						 
+						if(scanf("%d",&n))
+						{
+							if(n==0) printf(RED"\nUndo/Redo disabled.\n"RESET);
+							else if(n<0) printf(BLUE"\nUnlimited undos!"RESET);
+							else printf(GREEN "Undo limit set to %d." RESET,n);
+						}
+						
+						else
+						{
+							while(getchar()!='\n');
+							printf(RED"Invalid input!\n"RESET);
+							continue;
+						}
 
-						 if(n==0) printf(RED"\nUndo/Redo disabled.\n"RESET);
-						 else if(n<0) printf(BLUE"\nUnlimited undos!"RESET);
-						 else if(n>0) printf(GREEN "Undo limit set to %d." RESET,n);
-						 else
-						 {
-							 printf(RED"Invalid input!\n"RESET);
-							 continue;
-						 }
-
-						 MAX_SAVES=n;
-						 break;
+						MAX_SAVES=n;
+						break;
 					 }
 
 					 break;
@@ -889,6 +893,7 @@ void resize_GRID()
 			}
 		}
 
+		while(getchar()!='\n');
 		printf(RED"Both values must be between 5 and 20. Please try again.\n"RESET);
 	}
 }
