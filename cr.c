@@ -110,7 +110,7 @@ void setup_GRID(cell[ROW][COL]);
 void setup_PLAYERS();
 char colour(char);
 void show_GRID(cell[ROW][COL]);
-void play();
+int play();
 void settings();
 bool get_INPUT(cell[ROW][COL]);
 char detect_SPLKEY(char);
@@ -140,7 +140,7 @@ int main()
 
 		switch(choice)
 		{
-			case 1 :play();
+			case 1 :while(play());
 					break;
 
 			case 2 :settings();
@@ -321,7 +321,7 @@ void show_GRID(cell grid[ROW][COL])
     }
 }
 
-void play()
+int play()
 {
 	bool z=1;
 	cell grid[ROW][COL];
@@ -358,7 +358,7 @@ void play()
 		
 		if(get_INPUT(grid))
 		{
-			if(p->player=='&')
+			if(p->player=='&' || p->player=='$')
 			{
 				free(Add_undo);
 
@@ -368,7 +368,9 @@ void play()
 					free(first->prev);
 				}
 				
-				return;
+				if (p->player=='$') return 1;
+
+				return 0;
 
 			}
 			
@@ -403,6 +405,8 @@ void play()
 		first=first->next;
 		free(first->prev);
 	}
+
+	return 0;
 }
 
 bool get_INPUT(cell grid[ROW][COL])
@@ -502,13 +506,19 @@ bool get_INPUT(cell grid[ROW][COL])
 					 
 					 return 1;
 
-			case '#':printf("Exit game? Press 'Esc' once again to confirm. Press any other key to cancel.\n");
+			case '#':printf("Press 'Esc' to return to main menu. Press 'r' to restart. Press any other key to cancel.\n");
 					 dir=getch();
 					 dir=detect_SPLKEY(dir);
 
 					 if(dir=='#')
 					 {
 						 p->player='&';
+						 return 1;
+					 }
+
+					 else if(dir=='r')
+					 {
+						 p->player='$';
 						 return 1;
 					 }
 
